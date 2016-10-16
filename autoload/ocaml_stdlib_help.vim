@@ -6,12 +6,18 @@ let s:HTTP = s:V.import('Web.HTTP')
 let s:XML = s:V.import('Web.XML')
 
 function! ocaml_stdlib_help#search(arg) abort
-  call s:create_window()
   let yql = "select * from html where url='http://caml.inria.fr/pub/docs/manual-ocaml/libref/" . a:arg . ".html'"
   let response = s:HTTP.get("https://query.yahooapis.com/v1/public/yql", { 'q' : yql })
   let dom = s:XML.parse(response.content)
   let body = dom.find('body')
   let lines = []
+
+  if empty(body)
+    call s:echo_error_msg(a:arg . ' was not found.')
+    return
+  endif
+
+  call s:create_window()
 
   let idx = s:find_h1_idx(body.child)
   for i in range(idx, len(body.child)-1)
@@ -69,6 +75,10 @@ function! s:format_table(table) abort
     let ret = ret . x . "\n"
   endfor
   return ret
+endfunction
+
+function! s:echo_error_msg(msg) abort
+  echohl ErrorMsg | echo 'ocaml_stdlib_help: ' . a:msg | echohl None
 endfunction
 
 let &cpo = s:save_cpo
